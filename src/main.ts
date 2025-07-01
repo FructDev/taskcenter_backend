@@ -14,7 +14,11 @@ async function bootstrap() {
 
   // NOTA PROFESIONAL: Habilitar CORS (Cross-Origin Resource Sharing)
   // Permite que nuestro frontend (que estará en un dominio diferente) se comunique con esta API.
-  app.enableCors();
+  app.enableCors({
+    origin: true, // En producción, deberías poner aquí la URL de tu frontend
+    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
+    credentials: true,
+  });
 
   // NOTA PROFESIONAL: Habilitar el ValidationPipe de forma global
   // Esto activa la validación automática para todos los DTOs que lo requieran.
