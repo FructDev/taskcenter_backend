@@ -28,6 +28,7 @@ import { UserRole } from 'src/users/entities/user.entity';
 import { RolesGuard } from 'src/auth/guards/roles/roles.guard';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { StatusChangeDto } from './dto/status-change.dto';
+import { CreateDailyLogDto } from './dto/create-daily-log.dto';
 
 @Controller('tasks')
 export class TasksController {
@@ -175,5 +176,15 @@ export class TasksController {
     @Body() statusChangeDto: StatusChangeDto,
   ) {
     return this.tasksService.cancel(id, req.user, statusChangeDto);
+  }
+
+  @Post(':id/daily-log')
+  @UseGuards(JwtAuthGuard)
+  addDailyLog(
+    @Param('id', ParseMongoIdPipe) id: string,
+    @Req() req,
+    @Body() createDailyLogDto: CreateDailyLogDto,
+  ) {
+    return this.tasksService.addDailyLog(id, req.user, createDailyLogDto);
   }
 }

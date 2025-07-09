@@ -23,6 +23,7 @@ import { ActivityLogService } from 'src/activity-log/activity-log.service';
 import { ActionType } from 'src/activity-log/entities/activity-log.entity';
 import { EquipmentService } from 'src/equipment/equipment.service';
 import { StatusChangeDto } from './dto/status-change.dto';
+import { CreateDailyLogDto } from './dto/create-daily-log.dto';
 
 @Injectable()
 export class TasksService {
@@ -121,7 +122,10 @@ export class TasksService {
     const filters: FilterQuery<Task> = {};
 
     if (status) {
-      filters.status = status;
+      // Convierte el string 'pendiente,en progreso' en un array ['pendiente', 'en progreso']
+      const statusArray = status.split(',');
+      // Usa el operador $in de MongoDB para buscar documentos cuyo estado esté en el array
+      filters.status = { $in: statusArray };
     }
     if (criticality) {
       filters.criticality = criticality;
@@ -510,6 +514,45 @@ export class TasksService {
       taskId: task._id.toString(),
       details: `Canceló la tarea. Motivo: ${statusChangeDto.reason}`,
     });
+    return task.save();
+  }
+
+  async addDailyLog(
+    taskId: string,
+    currentUser: UserDocument,
+    dto: CreateDailyLogDto,
+  ) {
+    const task = await this.findOne(taskId);
+
+    // Lógica para evitar duplicados en el mismo día (opcional pero recomendado)
+    const today = new Date().toISOString().split('T')[0];
+    const hasLogForToday = task.dailyLogs.some(
+      (log) => new Date(log.createdAt).toISOString().split('T')[0] === today,
+    );
+    if (hasLogForToday) {
+      throw new BadRequestException(
+        'Ya existe un registro para esta tarea el día de hoy.',
+      );
+    }
+
+    const newLog = {
+      confirmedBy: currentUser._id,
+      notes: dto.notes || 'Asistencia y trabajo confirmados.',
+      location: dto.locationId,
+    };
+
+    task.dailyLogs.push(newLog as any);
+
+    // Actualizamos la ubicación principal de la tarea a la del último registro
+    task.location = dto.locationId as any;
+
+    await this.activityLogService.createLog({
+      user: currentUser,
+      action: ActionType.COMMENT_ADDED, // Podríamos crear una acción nueva 'DAILY_LOG_ADDED'
+      taskId: task._id.toString(),
+      details: `Registró un parte diario para la tarea "${task.title}"`,
+    });
+
     return task.save();
   }
 }

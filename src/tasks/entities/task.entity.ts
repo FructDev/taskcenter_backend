@@ -30,6 +30,25 @@ export enum TaskStatus {
 }
 
 @Schema({ _id: false, timestamps: true })
+class DailyLog {
+  @Prop({ type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true })
+  confirmedBy: User;
+
+  @Prop({ required: true })
+  notes: string;
+
+  @Prop({
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Location',
+    required: true,
+  })
+  location: Location;
+
+  createdAt: Date;
+}
+export const DailyLogSchema = SchemaFactory.createForClass(DailyLog);
+
+@Schema({ _id: false, timestamps: true })
 class StatusChange {
   @Prop({ required: true })
   from: string;
@@ -135,6 +154,9 @@ export class Task {
 
   @Prop({ type: [StatusChangeSchema], default: [] })
   statusHistory: StatusChange[];
+
+  @Prop({ type: [DailyLogSchema], default: [] })
+  dailyLogs: DailyLog[];
 }
 
 // Exportamos el tipo de Documento de Mongoose por separado
