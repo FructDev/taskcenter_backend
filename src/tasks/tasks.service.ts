@@ -33,6 +33,7 @@ export class TasksService {
     'contractorAssociated',
     'comments.author',
     'equipment',
+    'requiredPpe',
   ];
   // Inyectamos el modelo de Mongoose para poder interactuar con la colección 'tasks'
   constructor(

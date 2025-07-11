@@ -5,6 +5,7 @@ import mongoose, { Document, HydratedDocument } from 'mongoose';
 import { Contractor } from 'src/contractors/entities/contractor.entity';
 import { User } from 'src/users/entities/user.entity';
 import { Equipment } from 'src/equipment/entities/equipment.entity';
+import { PpeItem } from 'src/ppe-items/entities/ppe-item.entity';
 
 // --- Enums para mantener la consistencia de los datos ---
 
@@ -157,6 +158,9 @@ export class Task {
 
   @Prop({ type: [DailyLogSchema], default: [] })
   dailyLogs: DailyLog[];
+
+  @Prop({ type: [{ type: mongoose.Schema.Types.ObjectId, ref: 'PpeItem' }] })
+  requiredPpe: PpeItem[];
 }
 
 // Exportamos el tipo de Documento de Mongoose por separado

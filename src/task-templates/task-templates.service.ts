@@ -42,11 +42,16 @@ export class TaskTemplatesService {
       .find()
       .sort({ name: 1 })
       .populate('location')
+      .populate('requiredPpe')
       .exec();
   }
 
   async findOne(id: string) {
-    const template = await this.taskTemplateModel.findById(id).exec();
+    const template = await this.taskTemplateModel
+      .findById(id)
+      .populate('location')
+      .populate('requiredPpe')
+      .exec();
     if (!template) {
       throw new NotFoundException(`Plantilla con ID "${id}" no encontrada.`);
     }

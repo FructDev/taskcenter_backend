@@ -7,6 +7,7 @@ import {
   IsDateString,
   IsOptional,
   IsMongoId,
+  IsArray,
 } from 'class-validator';
 import {
   CriticalityLevel,
@@ -84,4 +85,9 @@ export class CreateTaskDto {
   @IsMongoId({ message: 'El ID de la ubicación no es válido' })
   @IsNotEmpty()
   location: string;
+
+  @IsOptional()
+  @IsArray()
+  @IsMongoId({ each: true })
+  requiredPpe?: string[];
 }

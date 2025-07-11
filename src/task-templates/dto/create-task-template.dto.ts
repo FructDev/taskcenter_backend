@@ -5,6 +5,7 @@ import {
   IsEnum,
   IsOptional,
   IsMongoId,
+  IsArray,
 } from 'class-validator';
 import { CriticalityLevel, TaskType } from 'src/tasks/entities/task.entity';
 
@@ -17,4 +18,9 @@ export class CreateTaskTemplateDto {
   @IsOptional()
   @IsMongoId()
   location?: string;
+
+  @IsOptional()
+  @IsArray()
+  @IsMongoId({ each: true })
+  requiredPpe?: string[];
 }

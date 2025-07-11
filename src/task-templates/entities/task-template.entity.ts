@@ -3,6 +3,7 @@ import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import mongoose, { HydratedDocument } from 'mongoose';
 import { CriticalityLevel, TaskType } from 'src/tasks/entities/task.entity';
 import { Location } from 'src/locations/entities/location.entity';
+import { PpeItem } from 'src/ppe-items/entities/ppe-item.entity';
 
 @Schema({ timestamps: true })
 export class TaskTemplate {
@@ -27,6 +28,9 @@ export class TaskTemplate {
     required: false,
   })
   location?: Location;
+
+  @Prop({ type: [{ type: mongoose.Schema.Types.ObjectId, ref: 'PpeItem' }] })
+  requiredPpe: PpeItem[];
 }
 
 export type TaskTemplateDocument = HydratedDocument<TaskTemplate>;

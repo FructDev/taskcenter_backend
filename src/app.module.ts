@@ -18,6 +18,7 @@ import { ActivityLogModule } from './activity-log/activity-log.module';
 import { EquipmentModule } from './equipment/equipment.module';
 import { ScheduleModule } from '@nestjs/schedule';
 import { ScheduledTasksModule } from './scheduled-tasks/scheduled-tasks.module';
+import { PpeItemsModule } from './ppe-items/ppe-items.module';
 
 @Module({
   imports: [
@@ -60,6 +61,8 @@ import { ScheduledTasksModule } from './scheduled-tasks/scheduled-tasks.module';
     ScheduleModule.forRoot(),
 
     ScheduledTasksModule,
+
+    PpeItemsModule,
   ],
   controllers: [AppController],
   providers: [AppService],
