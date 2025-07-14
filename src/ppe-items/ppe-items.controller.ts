@@ -26,7 +26,7 @@ export class PpeItemsController {
 
   @Post()
   @UseGuards(RolesGuard)
-  @Roles(UserRole.ADMIN, UserRole.SUPERVISOR)
+  @Roles(UserRole.ADMIN, UserRole.SUPERVISOR, UserRole.PLANIFICADOR)
   create(@Body() createPpeItemDto: CreatePpeItemDto) {
     return this.ppeItemsService.create(createPpeItemDto);
   }
@@ -38,7 +38,7 @@ export class PpeItemsController {
 
   @Patch(':id')
   @UseGuards(RolesGuard)
-  @Roles(UserRole.ADMIN, UserRole.SUPERVISOR)
+  @Roles(UserRole.ADMIN, UserRole.SUPERVISOR, UserRole.PLANIFICADOR)
   update(
     @Param('id', ParseMongoIdPipe) id: string,
     @Body() updatePpeItemDto: UpdatePpeItemDto,
@@ -48,7 +48,7 @@ export class PpeItemsController {
 
   @Delete(':id')
   @UseGuards(RolesGuard)
-  @Roles(UserRole.ADMIN, UserRole.SUPERVISOR)
+  @Roles(UserRole.ADMIN, UserRole.SUPERVISOR, UserRole.PLANIFICADOR)
   @HttpCode(HttpStatus.NO_CONTENT)
   remove(@Param('id', ParseMongoIdPipe) id: string) {
     return this.ppeItemsService.remove(id);

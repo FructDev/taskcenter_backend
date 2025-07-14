@@ -24,7 +24,7 @@ export class TaskTemplatesController {
   constructor(private readonly taskTemplatesService: TaskTemplatesService) {}
 
   @Post()
-  @Roles(UserRole.ADMIN, UserRole.SUPERVISOR) // Solo roles altos crean
+  @Roles(UserRole.ADMIN, UserRole.SUPERVISOR, UserRole.PLANIFICADOR) // Solo roles altos crean
   @UseGuards(RolesGuard)
   create(@Body() createTaskTemplateDto: CreateTaskTemplateDto) {
     return this.taskTemplatesService.create(createTaskTemplateDto);
@@ -41,7 +41,7 @@ export class TaskTemplatesController {
   }
 
   @Patch(':id')
-  @Roles(UserRole.ADMIN, UserRole.SUPERVISOR)
+  @Roles(UserRole.ADMIN, UserRole.SUPERVISOR, UserRole.PLANIFICADOR)
   @UseGuards(RolesGuard)
   update(
     @Param('id', ParseMongoIdPipe) id: string,
@@ -51,7 +51,7 @@ export class TaskTemplatesController {
   }
 
   @Delete(':id')
-  @Roles(UserRole.ADMIN, UserRole.SUPERVISOR)
+  @Roles(UserRole.ADMIN, UserRole.SUPERVISOR, UserRole.PLANIFICADOR)
   @UseGuards(RolesGuard)
   remove(@Param('id', ParseMongoIdPipe) id: string) {
     return this.taskTemplatesService.remove(id);

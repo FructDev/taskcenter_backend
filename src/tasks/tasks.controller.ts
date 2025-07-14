@@ -35,7 +35,12 @@ export class TasksController {
   constructor(private readonly tasksService: TasksService) {}
 
   @Post()
-  @Roles(UserRole.ADMIN, UserRole.SUPERVISOR, UserRole.PLANIFICADOR)
+  @Roles(
+    UserRole.ADMIN,
+    UserRole.SUPERVISOR,
+    UserRole.PLANIFICADOR,
+    UserRole.TECNICO,
+  )
   @UseGuards(JwtAuthGuard, RolesGuard)
   @HttpCode(HttpStatus.CREATED)
   create(@Body() createTaskDto: CreateTaskDto, @Req() req) {

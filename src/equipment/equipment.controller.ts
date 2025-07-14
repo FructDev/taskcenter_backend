@@ -26,7 +26,7 @@ export class EquipmentController {
 
   @Post()
   @UseGuards(RolesGuard)
-  @Roles(UserRole.ADMIN, UserRole.SUPERVISOR)
+  @Roles(UserRole.ADMIN, UserRole.SUPERVISOR, UserRole.PLANIFICADOR)
   create(@Body() createEquipmentDto: CreateEquipmentDto) {
     return this.equipmentService.create(createEquipmentDto);
   }
@@ -43,7 +43,7 @@ export class EquipmentController {
 
   @Patch(':id')
   @UseGuards(RolesGuard)
-  @Roles(UserRole.ADMIN, UserRole.SUPERVISOR)
+  @Roles(UserRole.ADMIN, UserRole.SUPERVISOR, UserRole.PLANIFICADOR)
   update(
     @Param('id', ParseMongoIdPipe) id: string,
     @Body() updateEquipmentDto: UpdateEquipmentDto,
@@ -53,7 +53,7 @@ export class EquipmentController {
 
   @Delete(':id')
   @UseGuards(RolesGuard)
-  @Roles(UserRole.ADMIN, UserRole.SUPERVISOR)
+  @Roles(UserRole.ADMIN, UserRole.SUPERVISOR, UserRole.PLANIFICADOR)
   @HttpCode(HttpStatus.NO_CONTENT)
   remove(@Param('id', ParseMongoIdPipe) id: string) {
     return this.equipmentService.remove(id);

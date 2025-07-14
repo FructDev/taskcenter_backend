@@ -22,7 +22,7 @@ import { ParseMongoIdPipe } from 'src/common/pipes/parse-mongo-id/parse-mongo-id
 
 @Controller('scheduled-tasks')
 @UseGuards(JwtAuthGuard, RolesGuard)
-@Roles(UserRole.ADMIN, UserRole.SUPERVISOR) // Toda la gestión es solo para roles altos
+@Roles(UserRole.ADMIN, UserRole.SUPERVISOR, UserRole.PLANIFICADOR) // Toda la gestión es solo para roles altos
 export class ScheduledTasksController {
   constructor(private readonly scheduledTasksService: ScheduledTasksService) {}
 

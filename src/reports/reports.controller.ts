@@ -1,10 +1,11 @@
 // src/reports/reports.controller.ts
-import { Controller, Get, UseGuards } from '@nestjs/common';
+import { Controller, Get, Query, UseGuards } from '@nestjs/common';
 import { ReportsService } from './reports.service';
 import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
 import { RolesGuard } from 'src/auth/guards/roles/roles.guard';
 import { Roles } from 'src/auth/decorators/roles.decorator';
 import { UserRole } from 'src/users/entities/user.entity';
+import { FilterReportDto } from './dto/filter-report.dto';
 
 @Controller('reports')
 @UseGuards(JwtAuthGuard, RolesGuard)
@@ -44,5 +45,17 @@ export class ReportsController {
   @Get('avg-time-by-type')
   getAverageTimeByType() {
     return this.reportsService.getAverageTimeByGroup('taskType');
+  }
+
+  @Get('workload')
+  // Este informe es para gestión, por lo que lo protegemos
+  @Roles(UserRole.ADMIN, UserRole.SUPERVISOR, UserRole.PLANIFICADOR)
+  getWorkloadReport() {
+    return this.reportsService.getWorkloadReport();
+  }
+
+  @Get('dashboard-data')
+  getDashboardData(@Query() filters: FilterReportDto) {
+    return this.reportsService.getDashboardData(filters);
   }
 }

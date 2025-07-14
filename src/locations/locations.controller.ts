@@ -26,7 +26,7 @@ export class LocationsController {
   constructor(private readonly locationsService: LocationsService) {}
 
   @Post()
-  @Roles(UserRole.ADMIN, UserRole.SUPERVISOR)
+  @Roles(UserRole.ADMIN, UserRole.SUPERVISOR, UserRole.PLANIFICADOR)
   @HttpCode(HttpStatus.CREATED)
   create(@Body() createLocationDto: CreateLocationDto) {
     return this.locationsService.create(createLocationDto);
@@ -60,7 +60,7 @@ export class LocationsController {
   }
 
   @Patch(':id')
-  @Roles(UserRole.ADMIN, UserRole.SUPERVISOR)
+  @Roles(UserRole.ADMIN, UserRole.SUPERVISOR, UserRole.PLANIFICADOR)
   update(
     @Param('id', ParseMongoIdPipe) id: string,
     @Body() updateLocationDto: UpdateLocationDto,
@@ -69,7 +69,7 @@ export class LocationsController {
   }
 
   @Delete(':id')
-  @Roles(UserRole.ADMIN, UserRole.SUPERVISOR)
+  @Roles(UserRole.ADMIN, UserRole.SUPERVISOR, UserRole.PLANIFICADOR)
   @HttpCode(HttpStatus.NO_CONTENT)
   remove(@Param('id', ParseMongoIdPipe) id: string) {
     return this.locationsService.remove(id);

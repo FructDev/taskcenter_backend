@@ -57,13 +57,19 @@ export class TasksService {
       const userRole = currentUser.role;
 
       if (userRole === UserRole.TECNICO) {
+        // Un técnico puede crear una tarea sin asignarla a un usuario (si es para un contratista)
+        // O puede asignársela a sí mismo, pero no a otro técnico.
         if (
           assignedTo &&
           assignedTo.toString() !== currentUser._id.toString()
         ) {
           throw new ForbiddenException(
-            'Un técnico solo puede asignarse tareas a sí mismo.',
+            'Un técnico solo puede crear tareas para sí mismo o para un contratista.',
           );
+        }
+        // Si el técnico no se asigna a sí mismo ni a un contratista, se auto-asigna por defecto.
+        if (!assignedTo && !contractorAssociated) {
+          createTaskDto.assignedTo = currentUser._id.toString();
         }
       } else if (
         userRole === UserRole.EHS ||
