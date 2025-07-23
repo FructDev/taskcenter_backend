@@ -19,6 +19,8 @@ import { EquipmentModule } from './equipment/equipment.module';
 import { ScheduleModule } from '@nestjs/schedule';
 import { ScheduledTasksModule } from './scheduled-tasks/scheduled-tasks.module';
 import { PpeItemsModule } from './ppe-items/ppe-items.module';
+import { NotificationsModule } from './notifications/notifications.module';
+// import { NotificationsModule } from './notifications/notifications.module';
 
 @Module({
   imports: [
@@ -63,6 +65,8 @@ import { PpeItemsModule } from './ppe-items/ppe-items.module';
     ScheduledTasksModule,
 
     PpeItemsModule,
+
+    NotificationsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

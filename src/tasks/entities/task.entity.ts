@@ -3,7 +3,7 @@ import { Location } from 'src/locations/entities/location.entity';
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import mongoose, { Document, HydratedDocument } from 'mongoose';
 import { Contractor } from 'src/contractors/entities/contractor.entity';
-import { User } from 'src/users/entities/user.entity';
+import { User, UserDocument } from 'src/users/entities/user.entity';
 import { Equipment } from 'src/equipment/entities/equipment.entity';
 import { PpeItem } from 'src/ppe-items/entities/ppe-item.entity';
 
@@ -121,7 +121,7 @@ export class Task {
   completedAt?: Date;
 
   @Prop({ type: mongoose.Schema.Types.ObjectId, ref: 'User', required: false })
-  assignedTo?: User; // ...el tipo en la práctica será UserDocument.
+  assignedTo?: UserDocument; // ...el tipo en la práctica será UserDocument.
 
   @Prop({
     type: mongoose.Schema.Types.ObjectId,
@@ -161,6 +161,9 @@ export class Task {
 
   @Prop({ type: [{ type: mongoose.Schema.Types.ObjectId, ref: 'PpeItem' }] })
   requiredPpe: PpeItem[];
+
+  @Prop({ type: Boolean, default: false })
+  isArchived: boolean;
 }
 
 // Exportamos el tipo de Documento de Mongoose por separado

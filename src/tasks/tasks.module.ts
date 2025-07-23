@@ -11,6 +11,7 @@ import { UsersModule } from 'src/users/users.module';
 import { LocationsModule } from 'src/locations/locations.module';
 import { ActivityLogModule } from 'src/activity-log/activity-log.module';
 import { EquipmentModule } from 'src/equipment/equipment.module';
+import { NotificationsModule } from 'src/notifications/notifications.module';
 
 @Module({
   // Añade esta sección de imports
@@ -22,6 +23,7 @@ import { EquipmentModule } from 'src/equipment/equipment.module';
     LocationsModule,
     ActivityLogModule,
     EquipmentModule,
+    NotificationsModule,
   ],
   controllers: [TasksController],
   providers: [TasksService],

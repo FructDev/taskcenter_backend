@@ -24,6 +24,7 @@ import { ActionType } from 'src/activity-log/entities/activity-log.entity';
 import { EquipmentService } from 'src/equipment/equipment.service';
 import { StatusChangeDto } from './dto/status-change.dto';
 import { CreateDailyLogDto } from './dto/create-daily-log.dto';
+import { NotificationsService } from 'src/notifications/notifications.service';
 
 @Injectable()
 export class TasksService {
@@ -44,6 +45,7 @@ export class TasksService {
     private locationsService: LocationsService,
     private activityLogService: ActivityLogService,
     private equipmentService: EquipmentService,
+    private readonly notificationsService: NotificationsService,
   ) {}
 
   // El método 'create' recibe el DTO validado desde el controlador
@@ -119,6 +121,16 @@ export class TasksService {
       });
     }
 
+    if (savedTask.assignedTo) {
+      // Si la tarea tiene un 'assignedTo', ya sabemos que es un ID válido.
+      // Simplemente lo convertimos a string.
+      await this.notificationsService.sendNotificationToUser(
+        savedTask.assignedTo._id.toString(),
+        'Nueva Tarea Asignada',
+        `Se ha creado la tarea: "${savedTask.title}"`,
+      );
+    }
+
     return savedTask.populate(this.relationsToPopulate);
   }
 
@@ -126,7 +138,7 @@ export class TasksService {
   findAll(filterDto: FilterTaskDto) {
     // Desestructuramos también 'search' del DTO
     const { status, criticality, taskType, search } = filterDto;
-    const filters: FilterQuery<Task> = {};
+    const filters: FilterQuery<Task> = { isArchived: { $ne: true } };
 
     if (status) {
       // Convierte el string 'pendiente,en progreso' en un array ['pendiente', 'en progreso']
@@ -227,15 +239,27 @@ export class TasksService {
     if (!updatedTask) {
       throw new NotFoundException(`Tarea con ID "${id}" no encontrada`);
     }
-    const oldAssigneeId = originalTask.assignedTo?.name;
-    const newAssigneeId = updatedTask.assignedTo?.name;
+    const oldAssigneeId = originalTask.assignedTo?._id?.toString();
+    const newAssigneeId = updatedTask.assignedTo?._id?.toString();
+
     if (oldAssigneeId !== newAssigneeId) {
+      // Primero, registramos el cambio en la bitácora de actividad
       await this.activityLogService.createLog({
         user: currentUser,
         action: ActionType.TASK_ASSIGNED,
         taskId: updatedTask._id.toString(),
         details: `Reasignó la tarea a ${updatedTask.assignedTo?.name || updatedTask.contractorAssociated?.companyName}`,
       });
+
+      // --- LÓGICA DE NOTIFICACIÓN AÑADIDA ---
+      // Si el nuevo asignado es un usuario (y no un contratista), le enviamos la notificación
+      if (updatedTask.assignedTo) {
+        await this.notificationsService.sendNotificationToUser(
+          updatedTask.assignedTo._id.toString(),
+          'Nueva Tarea Asignada',
+          `Se te ha asignado la tarea: "${updatedTask.title}"`,
+        );
+      }
     } else {
       await this.activityLogService.createLog({
         user: currentUser,
@@ -248,23 +272,21 @@ export class TasksService {
   }
 
   async remove(id: string, currentUser: UserDocument) {
-    // findByIdAndDelete busca un documento por su ID y lo elimina.
-    // Devuelve el documento que fue eliminado, o null si no se encontró.
-    const deletedTask = await this.taskModel.findByIdAndDelete(id).exec();
-
-    // Reutilizamos nuestro manejo de errores profesional una vez más.
-    if (!deletedTask) {
-      throw new NotFoundException(`Tarea con ID "${id}" no encontrada`);
+    const task = await this.findOne(id);
+    if (!task) {
+      throw new NotFoundException(`Tarea con ID "${id}" no encontrada.`);
     }
+
+    task.isArchived = true;
 
     await this.activityLogService.createLog({
       user: currentUser,
-      action: ActionType.TASK_DELETED,
-      details: `Eliminó la tarea "${deletedTask.title}" (ID: ${id})`,
+      action: ActionType.TASK_DELETED, // La acción sigue siendo la misma para el log
+      details: `Archivó la tarea "${task.title}"`,
     });
-    // No es estrictamente necesario devolver algo aquí, pero lo hacemos
-    // por si alguna lógica futura necesita saber qué se eliminó.
-    return deletedTask;
+
+    const savedTask = await task.save();
+    return savedTask;
   }
 
   async startTask(id: string, currentUser: UserDocument) {
@@ -416,11 +438,16 @@ export class TasksService {
   }
 
   findTasksByUserId(userId: string) {
-    // Buscamos todas las tareas donde el campo 'assignedTo' coincida con el userId
     return this.taskModel
-      .find({ assignedTo: userId })
-      .sort({ dueDate: 1 }) // Las ordenamos por la más próxima a vencer
-      .populate(this.relationsToPopulate) // Usamos nuestras relaciones para obtener toda la info
+      .find({
+        assignedTo: userId,
+        // Añadimos el filtro para mostrar solo tareas activas
+        status: { $in: ['pendiente', 'en progreso', 'pausada'] },
+        // Y nos aseguramos de no mostrar las archivadas
+        isArchived: { $ne: true },
+      })
+      .sort({ dueDate: 1 })
+      .populate(this.relationsToPopulate)
       .exec();
   }
 

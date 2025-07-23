@@ -149,4 +149,18 @@ export class UsersService {
 
     return updatedUser;
   }
+
+  async addFcmToken(userId: string, token: string) {
+    return this.userModel.updateOne(
+      { _id: userId },
+      { $addToSet: { fcmTokens: token } }, // $addToSet evita duplicados
+    );
+  }
+
+  async removeFcmToken(userId: string, token: string) {
+    return this.userModel.updateOne(
+      { _id: userId },
+      { $pull: { fcmTokens: token } },
+    );
+  }
 }

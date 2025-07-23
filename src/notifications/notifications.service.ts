@@ -1,0 +1,69 @@
+import { Injectable, Logger } from '@nestjs/common';
+import * as admin from 'firebase-admin';
+import { UsersService } from 'src/users/users.service';
+
+// 1. Importamos los módulos nativos de Node.js para leer archivos
+import { readFileSync } from 'fs';
+import { resolve } from 'path';
+
+@Injectable()
+export class NotificationsService {
+  private readonly logger = new Logger(NotificationsService.name);
+
+  constructor(private usersService: UsersService) {
+    if (admin.apps.length === 0) {
+      try {
+        // 2. Construimos la ruta absoluta al archivo de credenciales
+        const serviceAccountPath = resolve(
+          process.cwd(),
+          'firebase-service-account.json',
+        );
+
+        // 3. Leemos el archivo como texto y lo parseamos a JSON
+        const serviceAccount = JSON.parse(
+          readFileSync(serviceAccountPath, 'utf8'),
+        );
+
+        admin.initializeApp({
+          credential: admin.credential.cert(serviceAccount),
+        });
+
+        this.logger.log('Firebase Admin SDK inicializado correctamente.');
+      } catch (error) {
+        this.logger.error('Error al inicializar Firebase Admin SDK:', error);
+        this.logger.error(
+          'Asegúrate de que el archivo "firebase-service-account.json" exista en la raíz del proyecto "api".',
+        );
+      }
+    }
+  }
+
+  // El resto de los métodos se mantienen igual
+  async sendNotificationToUser(userId: string, title: string, body: string) {
+    const user = await this.usersService.findOne(userId);
+    if (!user || !user.fcmTokens || user.fcmTokens.length === 0) {
+      return;
+    }
+
+    const validTokens = user.fcmTokens.filter((token) => token);
+    if (validTokens.length === 0) {
+      return;
+    }
+
+    const message: admin.messaging.MulticastMessage = {
+      notification: { title, body },
+      tokens: validTokens,
+      webpush: {
+        fcmOptions: {
+          link: 'https://girasol-pwa.vercel.app/my-tasks',
+        },
+      },
+    };
+
+    try {
+      await admin.messaging().sendEachForMulticast(message);
+    } catch (error) {
+      this.logger.error('Error al enviar notificaciones:', error);
+    }
+  }
+}

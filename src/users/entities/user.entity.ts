@@ -47,6 +47,9 @@ export class User {
     default: UserRole.TECNICO,
   })
   role: UserRole;
+
+  @Prop({ type: [String], default: [] })
+  fcmTokens: string[];
 }
 
 export type UserDocument = HydratedDocument<User>;
