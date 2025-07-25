@@ -42,19 +42,17 @@ export class NotificationsService {
   async sendNotificationToUser(userId: string, title: string, body: string) {
     this.logger.log(`Buscando usuario ${userId} para enviar notificación...`);
     const user = await this.usersService.findOne(userId);
+
     if (!user || !user.fcmTokens || user.fcmTokens.length === 0) {
       this.logger.warn(
-        `Usuario ${userId} no encontrado o sin tokens. Abortando notificación.`,
+        `Usuario ${userId} no encontrado o sin tokens. Abortando.`,
       );
       return;
     }
 
-    this.logger.log(
-      `Usuario encontrado. Enviando notificación a los tokens: ${JSON.stringify(user.fcmTokens)}`,
-    );
-
     const validTokens = user.fcmTokens.filter((token) => token);
     if (validTokens.length === 0) {
+      this.logger.warn(`Usuario ${userId} no tiene tokens válidos.`);
       return;
     }
 
@@ -73,6 +71,35 @@ export class NotificationsService {
       this.logger.log(
         `Respuesta de Firebase. Éxitos: ${response.successCount}, Fallos: ${response.failureCount}`,
       );
+
+      // --- LÓGICA DE LIMPIEZA DE TOKENS INVÁLIDOS ---
+      if (response.failureCount > 0) {
+        const tokensToDelete: string[] = [];
+        response.responses.forEach((resp, idx) => {
+          if (!resp.success && resp.error) {
+            const failedToken = validTokens[idx];
+            this.logger.error(`Falló el token: ${failedToken}`, resp.error);
+
+            // Si el error indica que el token es inválido, lo añadimos a la lista de borrado
+            const errorCode = resp.error.code;
+            if (
+              errorCode === 'messaging/invalid-registration-token' ||
+              errorCode === 'messaging/registration-token-not-registered'
+            ) {
+              tokensToDelete.push(failedToken);
+            }
+          }
+        });
+
+        if (tokensToDelete.length > 0) {
+          this.logger.log(
+            `Limpiando ${tokensToDelete.length} tokens inválidos para el usuario ${userId}`,
+          );
+          // Usamos $pullAll para eliminar múltiples tokens de la base de datos a la vez
+          await this.usersService.removeFcmTokens(userId, tokensToDelete);
+        }
+      }
+      // --- FIN DE LA LÓGICA DE LIMPIEZA ---
     } catch (error) {
       this.logger.error(
         'Error CRÍTICO al intentar enviar notificaciones:',

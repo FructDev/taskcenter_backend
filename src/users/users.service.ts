@@ -163,4 +163,11 @@ export class UsersService {
       { $pull: { fcmTokens: token } },
     );
   }
+
+  async removeFcmTokens(userId: string, tokens: string[]) {
+    return this.userModel.updateOne(
+      { _id: userId },
+      { $pull: { fcmTokens: { $in: tokens } } },
+    );
+  }
 }
