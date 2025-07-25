@@ -5,6 +5,7 @@ import {
   ForbiddenException,
   Injectable,
   InternalServerErrorException,
+  Logger,
   NotFoundException,
 } from '@nestjs/common';
 import { CreateTaskDto } from './dto/create-task.dto';
@@ -28,6 +29,7 @@ import { NotificationsService } from 'src/notifications/notifications.service';
 
 @Injectable()
 export class TasksService {
+  private readonly logger = new Logger(TasksService.name);
   private readonly relationsToPopulate = [
     'location',
     'assignedTo',
@@ -254,6 +256,9 @@ export class TasksService {
       // --- LÓGICA DE NOTIFICACIÓN AÑADIDA ---
       // Si el nuevo asignado es un usuario (y no un contratista), le enviamos la notificación
       if (updatedTask.assignedTo) {
+        this.logger.log(
+          `Intento de notificación para usuario: ${newAssigneeId}`,
+        );
         await this.notificationsService.sendNotificationToUser(
           updatedTask.assignedTo._id.toString(),
           'Nueva Tarea Asignada',

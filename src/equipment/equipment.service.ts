@@ -13,6 +13,7 @@ import {
   EquipmentDocument,
   EquipmentType,
 } from './entities/equipment.entity';
+import { BulkCreateEquipmentDto } from './dto/bulk-create-equipment.dto';
 
 @Injectable()
 export class EquipmentService {
@@ -84,5 +85,40 @@ export class EquipmentService {
 
   findByType(type: EquipmentType) {
     return this.equipmentModel.find({ type }).populate('location').exec();
+  }
+
+  async bulkCreate(dto: BulkCreateEquipmentDto) {
+    const {
+      type,
+      parentLocationId,
+      quantity,
+      namePrefix,
+      codePrefix,
+      startNumber,
+    } = dto;
+
+    const equipmentToCreate: CreateEquipmentDto[] = [];
+
+    for (let i = 0; i < quantity; i++) {
+      const currentNumber = startNumber + i;
+      // Formateamos el número para que tenga 2 dígitos si es SCB (ej: 01, 02... 18)
+      const formattedNumber = currentNumber.toString().padStart(2, '0');
+
+      equipmentToCreate.push({
+        type,
+        location: parentLocationId,
+        name: `${namePrefix} ${formattedNumber}`,
+        code: `${codePrefix}${formattedNumber}`,
+      });
+    }
+
+    // Usamos insertMany de Mongoose para una inserción masiva y eficiente
+    const createdEquipment =
+      await this.equipmentModel.insertMany(equipmentToCreate);
+
+    return {
+      message: `${createdEquipment.length} equipos creados exitosamente.`,
+      count: createdEquipment.length,
+    };
   }
 }

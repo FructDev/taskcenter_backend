@@ -18,6 +18,7 @@ import { RolesGuard } from 'src/auth/guards/roles/roles.guard';
 import { Roles } from 'src/auth/decorators/roles.decorator';
 import { UserRole } from 'src/users/entities/user.entity';
 import { ParseMongoIdPipe } from 'src/common/pipes/parse-mongo-id/parse-mongo-id.pipe';
+import { BulkCreateEquipmentDto } from './dto/bulk-create-equipment.dto';
 
 @Controller('equipment')
 @UseGuards(JwtAuthGuard)
@@ -57,5 +58,12 @@ export class EquipmentController {
   @HttpCode(HttpStatus.NO_CONTENT)
   remove(@Param('id', ParseMongoIdPipe) id: string) {
     return this.equipmentService.remove(id);
+  }
+
+  @Post('bulk')
+  @Roles(UserRole.ADMIN, UserRole.SUPERVISOR) // Solo roles altos pueden hacer creaciones masivas
+  @UseGuards(RolesGuard)
+  bulkCreate(@Body() bulkCreateDto: BulkCreateEquipmentDto) {
+    return this.equipmentService.bulkCreate(bulkCreateDto);
   }
 }

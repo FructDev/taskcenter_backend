@@ -40,10 +40,18 @@ export class NotificationsService {
 
   // El resto de los métodos se mantienen igual
   async sendNotificationToUser(userId: string, title: string, body: string) {
+    this.logger.log(`Buscando usuario ${userId} para enviar notificación...`);
     const user = await this.usersService.findOne(userId);
     if (!user || !user.fcmTokens || user.fcmTokens.length === 0) {
+      this.logger.warn(
+        `Usuario ${userId} no encontrado o sin tokens. Abortando notificación.`,
+      );
       return;
     }
+
+    this.logger.log(
+      `Usuario encontrado. Enviando notificación a los tokens: ${JSON.stringify(user.fcmTokens)}`,
+    );
 
     const validTokens = user.fcmTokens.filter((token) => token);
     if (validTokens.length === 0) {
