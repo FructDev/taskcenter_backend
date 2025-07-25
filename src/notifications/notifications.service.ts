@@ -69,9 +69,15 @@ export class NotificationsService {
     };
 
     try {
-      await admin.messaging().sendEachForMulticast(message);
+      const response = await admin.messaging().sendEachForMulticast(message);
+      this.logger.log(
+        `Respuesta de Firebase. Éxitos: ${response.successCount}, Fallos: ${response.failureCount}`,
+      );
     } catch (error) {
-      this.logger.error('Error al enviar notificaciones:', error);
+      this.logger.error(
+        'Error CRÍTICO al intentar enviar notificaciones:',
+        error,
+      );
     }
   }
 }
