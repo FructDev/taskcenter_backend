@@ -5,7 +5,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
+import { FilterQuery, Model } from 'mongoose';
 import { CreateEquipmentDto } from './dto/create-equipment.dto';
 import { UpdateEquipmentDto } from './dto/update-equipment.dto';
 import {
@@ -14,6 +14,7 @@ import {
   EquipmentType,
 } from './entities/equipment.entity';
 import { BulkCreateEquipmentDto } from './dto/bulk-create-equipment.dto';
+import { FilterEquipmentDto } from './dto/filter-equipment.dto';
 
 @Injectable()
 export class EquipmentService {
@@ -38,8 +39,33 @@ export class EquipmentService {
     }
   }
 
-  findAll() {
-    return this.equipmentModel.find().populate('location').exec();
+  async findAll(filtersDto: FilterEquipmentDto) {
+    const { page = 1, limit = 10, search, type } = filtersDto;
+
+    const filters: FilterQuery<Equipment> = {};
+    if (type) {
+      filters.type = type;
+    }
+    if (search) {
+      // Busca el término de búsqueda en los campos 'name' y 'code'
+      filters.$or = [
+        { name: { $regex: search, $options: 'i' } },
+        { code: { $regex: search, $options: 'i' } },
+      ];
+    }
+
+    const [data, total] = await Promise.all([
+      this.equipmentModel
+        .find(filters)
+        .limit(limit)
+        .skip((page - 1) * limit)
+        .populate('location')
+        .sort({ name: 1 })
+        .exec(),
+      this.equipmentModel.countDocuments(filters),
+    ]);
+
+    return { data, total };
   }
 
   async findOne(id: string) {

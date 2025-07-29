@@ -42,40 +42,39 @@ export class ReportsService {
   }
 
   // --- NUEVO MÉTODO ---
-  async getAverageResolutionTime() {
+  // Reemplaza tu método actual con este
+  async _getAverageResolutionTime(matchStage: any) {
     const result = await this.taskModel.aggregate([
+      // 1. Aplicamos los filtros que nos llegan (ej. rango de fechas)
+      { $match: matchStage },
+      // 2. Filtramos solo tareas que se puedan medir
       {
-        // 1. Filtrar solo tareas completadas que tengan fecha de inicio y fin
         $match: {
           status: TaskStatus.COMPLETADA,
           startedAt: { $exists: true },
           completedAt: { $exists: true },
         },
       },
+      // 3. Calculamos la diferencia
       {
-        // 2. Calcular la diferencia de tiempo en milisegundos
         $project: {
           resolutionTime: { $subtract: ['$completedAt', '$startedAt'] },
         },
       },
+      // 4. Calculamos el promedio
       {
-        // 3. Calcular el promedio de todas las diferencias
         $group: {
-          _id: null, // Agrupamos todos los documentos en uno solo
+          _id: null,
           averageMilliseconds: { $avg: '$resolutionTime' },
         },
       },
     ]);
 
     if (result.length === 0) {
-      return { averageMilliseconds: 0, averageHours: 0 };
+      return { averageMilliseconds: 0 };
     }
 
-    const avgMs = result[0].averageMilliseconds;
-    return {
-      averageMilliseconds: avgMs,
-      averageHours: avgMs / (1000 * 60 * 60), // Convertimos a horas
-    };
+    return { averageMilliseconds: result[0].averageMilliseconds };
   }
 
   async getAverageTimeByGroup(groupByField: string) {
@@ -129,6 +128,7 @@ export class ReportsService {
         $match: {
           status: { $in: ['pendiente', 'en progreso', 'pausada'] },
           assignedTo: { $exists: true, $ne: null }, // Solo tareas asignadas a usuarios
+          isArchived: { $ne: true },
         },
       },
       // Etapa 2: Agrupar por usuario asignado y contar las tareas
@@ -172,11 +172,13 @@ export class ReportsService {
     ]);
   }
 
+  // En src/reports/reports.service.ts
+
   async getDashboardData(filters: FilterReportDto) {
-    const matchStage = this.createMatchStage(filters);
+    const interactiveMatchStage = this.createMatchStage(filters);
 
     const [
-      kpiData,
+      kpis,
       tasksByStatus,
       tasksByCriticality,
       tasksByType,
@@ -184,17 +186,17 @@ export class ReportsService {
       topFailingEquipment,
       tasksTrend,
     ] = await Promise.all([
-      this._getKpiData(matchStage),
-      this._getTasksByStatus(matchStage),
-      this._getTasksByCriticality(matchStage),
-      this._getTasksByType(matchStage),
-      this._getTopTechnicians(matchStage),
-      this._getTopFailingEquipment(matchStage),
-      this._getTasksTrend(matchStage),
+      this._getKpiData(interactiveMatchStage),
+      this._getTasksByStatus(interactiveMatchStage),
+      this._getTasksByCriticality(interactiveMatchStage),
+      this._getTasksByType(interactiveMatchStage),
+      this._getTopTechnicians(interactiveMatchStage),
+      this._getTopFailingEquipment(interactiveMatchStage),
+      this._getTasksTrend(interactiveMatchStage),
     ]);
 
     return {
-      kpis: kpiData,
+      kpis,
       tasksByStatus,
       tasksByCriticality,
       tasksByType,
@@ -389,13 +391,14 @@ export class ReportsService {
     // Tareas completadas en los últimos 30 días
     const last30Days = new Date();
     last30Days.setDate(last30Days.getDate() - 30);
+    const filters = {
+      ...matchStage,
+      status: TaskStatus.COMPLETADA,
+      completedAt: { $gte: last30Days },
+    };
     return this.taskModel.aggregate([
       {
-        $match: {
-          ...matchStage,
-          status: TaskStatus.COMPLETADA,
-          completedAt: { $gte: last30Days },
-        },
+        $match: filters,
       },
       { $group: { _id: '$assignedTo', count: { $sum: 1 } } },
       { $sort: { count: -1 } },
@@ -420,13 +423,10 @@ export class ReportsService {
   }
 
   private async _getTopFailingEquipment(matchStage: any) {
+    const filters = { ...matchStage, taskType: 'mantenimiento_correctivo' };
     return this.taskModel.aggregate([
       {
-        $match: {
-          ...matchStage,
-          taskType: 'mantenimiento correctivo',
-          equipment: { $exists: true, $ne: null },
-        },
+        $match: filters,
       },
       { $group: { _id: '$equipment', count: { $sum: 1 } } },
       { $sort: { count: -1 } },
@@ -453,8 +453,9 @@ export class ReportsService {
   private async _getTasksTrend(matchStage: any) {
     const last6Months = new Date();
     last6Months.setMonth(last6Months.getMonth() - 6);
+    const filters = { ...matchStage, createdAt: { $gte: last6Months } };
     return this.taskModel.aggregate([
-      { $match: { ...matchStage, createdAt: { $gte: last6Months } } },
+      { $match: filters },
       {
         $group: {
           _id: {

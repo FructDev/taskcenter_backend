@@ -23,7 +23,7 @@ import { JwtStrategy } from './strategies/jwt.strategy';
         // Leemos el secreto de nuestras variables de entorno
         secret: configService.get<string>('JWT_SECRET'),
         // Establecemos un tiempo de expiración para el token
-        signOptions: { expiresIn: '1d' }, // ej. 1 día
+        signOptions: { expiresIn: '30d' }, // ej. 1 día
       }),
     }),
   ],

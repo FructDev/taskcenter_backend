@@ -32,8 +32,8 @@ export class ReportsController {
 
   // --- NUEVO ENDPOINT ---
   @Get('average-resolution-time')
-  getAverageResolutionTime() {
-    return this.reportsService.getAverageResolutionTime();
+  getAverageResolutionTime(@Query() filters: FilterReportDto) {
+    return this.reportsService._getAverageResolutionTime(filters);
   }
 
   @Get('avg-time-by-criticality')

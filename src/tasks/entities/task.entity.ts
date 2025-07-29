@@ -15,6 +15,15 @@ export enum CriticalityLevel {
   BAJA = 'baja',
 }
 
+export enum FailureMode {
+  ELECTRICAL = 'falla_electrica',
+  MECHANICAL = 'falla_mecanica',
+  COMMUNICATION = 'falla_comunicacion',
+  OVERHEATING = 'sobrecalentamiento',
+  PHYSICAL_DAMAGE = 'dano_fisico',
+  OTHER = 'otro',
+}
+
 export enum TaskType {
   PREVENTIVO = 'mantenimiento preventivo',
   CORRECTIVO = 'mantenimiento correctivo',
@@ -29,6 +38,19 @@ export enum TaskStatus {
   CANCELADA = 'cancelada',
   PAUSADA = 'pausada', // <-- Añadir
 }
+
+@Schema({ _id: false })
+class FailureReport {
+  @Prop({ type: String, enum: FailureMode, required: true })
+  failureMode: FailureMode;
+
+  @Prop({ required: true })
+  diagnosis: string;
+
+  @Prop({ required: true })
+  correctiveAction: string;
+}
+export const FailureReportSchema = SchemaFactory.createForClass(FailureReport);
 
 @Schema({ _id: false, timestamps: true })
 class DailyLog {
@@ -164,6 +186,9 @@ export class Task {
 
   @Prop({ type: Boolean, default: false })
   isArchived: boolean;
+
+  @Prop({ type: FailureReportSchema, required: false })
+  failureReport?: FailureReport;
 }
 
 // Exportamos el tipo de Documento de Mongoose por separado

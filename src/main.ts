@@ -30,6 +30,9 @@ async function bootstrap() {
       whitelist: true, // Remueve cualquier propiedad que no esté definida en el DTO.
       forbidNonWhitelisted: true, // Lanza un error si se reciben propiedades no definidas en el DTO.
       transform: true, // Transforma los datos de entrada a su tipo de DTO correspondiente.
+      transformOptions: {
+        enableImplicitConversion: true,
+      },
     }),
   );
 

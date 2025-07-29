@@ -13,7 +13,7 @@ import { UpdateTaskDto } from './dto/update-task.dto';
 import { InjectModel } from '@nestjs/mongoose';
 import { FilterTaskDto } from './dto/filter-task.dto';
 import { FilterQuery, Model } from 'mongoose';
-import { Task, TaskStatus } from './entities/task.entity';
+import { Task, TaskStatus, TaskType } from './entities/task.entity';
 import { CreateCommentDto } from './dto/create-comment.dto';
 import { CloudinaryService } from 'src/common/cloudinary/cloudinary.service';
 import { UsersService } from 'src/users/users.service';
@@ -26,6 +26,7 @@ import { EquipmentService } from 'src/equipment/equipment.service';
 import { StatusChangeDto } from './dto/status-change.dto';
 import { CreateDailyLogDto } from './dto/create-daily-log.dto';
 import { NotificationsService } from 'src/notifications/notifications.service';
+import { CompleteTaskDto } from './dto/complete-task.dto';
 
 @Injectable()
 export class TasksService {
@@ -324,23 +325,32 @@ export class TasksService {
     return task.save();
   }
 
-  async completeTask(id: string, currentUser: UserDocument) {
+  async completeTask(
+    id: string,
+    currentUser: UserDocument,
+    completeTaskDto: CompleteTaskDto,
+  ) {
     const task = await this.findOne(id);
-    if (!task.assignedTo && !task.contractorAssociated) {
-      throw new BadRequestException(
-        'La tarea debe tener un responsable asignado para poder cambiar su estado.',
-      );
-    }
-
-    // Lógica de negocio: Solo se puede completar una tarea si está 'en progreso'
     if (task.status !== TaskStatus.EN_PROGRESO) {
       throw new BadRequestException(
         `No se puede completar una tarea que está "${task.status}"`,
       );
     }
 
+    // Si es una tarea correctiva y se envía un reporte, lo guardamos
+    if (
+      task.taskType === TaskType.CORRECTIVO &&
+      completeTaskDto.failureReport
+    ) {
+      task.failureReport = {
+        failureMode: completeTaskDto.failureReport.failureMode,
+        diagnosis: completeTaskDto.failureReport.diagnosis,
+        correctiveAction: completeTaskDto.failureReport.correctiveAction,
+      };
+    }
+
     task.status = TaskStatus.COMPLETADA;
-    task.completedAt = new Date(); // Registramos la fecha de finalización
+    task.completedAt = new Date();
 
     await this.activityLogService.createLog({
       user: currentUser,
@@ -420,18 +430,22 @@ export class TasksService {
   async getSummary() {
     const pending = await this.taskModel.countDocuments({
       status: 'pendiente',
+      isArchived: { $ne: true },
     });
     const inProgress = await this.taskModel.countDocuments({
       status: 'en progreso',
+      isArchived: { $ne: true },
     });
     const highCriticality = await this.taskModel.countDocuments({
       criticality: 'alta',
+      isArchived: { $ne: true },
     });
 
     const now = new Date();
     const overdue = await this.taskModel.countDocuments({
       dueDate: { $lt: now },
       status: { $in: ['pendiente', 'en progreso'] },
+      isArchived: { $ne: true },
     });
 
     return {

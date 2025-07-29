@@ -9,6 +9,7 @@ import {
   UseGuards,
   HttpCode,
   HttpStatus,
+  Query,
 } from '@nestjs/common';
 import { EquipmentService } from './equipment.service';
 import { CreateEquipmentDto } from './dto/create-equipment.dto';
@@ -19,6 +20,7 @@ import { Roles } from 'src/auth/decorators/roles.decorator';
 import { UserRole } from 'src/users/entities/user.entity';
 import { ParseMongoIdPipe } from 'src/common/pipes/parse-mongo-id/parse-mongo-id.pipe';
 import { BulkCreateEquipmentDto } from './dto/bulk-create-equipment.dto';
+import { FilterEquipmentDto } from './dto/filter-equipment.dto';
 
 @Controller('equipment')
 @UseGuards(JwtAuthGuard)
@@ -33,8 +35,8 @@ export class EquipmentController {
   }
 
   @Get()
-  findAll() {
-    return this.equipmentService.findAll();
+  findAll(@Query() filtersDto: FilterEquipmentDto) {
+    return this.equipmentService.findAll(filtersDto);
   }
 
   @Get(':id')

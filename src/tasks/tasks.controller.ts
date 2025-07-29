@@ -29,6 +29,8 @@ import { RolesGuard } from 'src/auth/guards/roles/roles.guard';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { StatusChangeDto } from './dto/status-change.dto';
 import { CreateDailyLogDto } from './dto/create-daily-log.dto';
+// import { FailureMode } from './entities/task.entity';
+import { CompleteTaskDto } from './dto/complete-task.dto';
 
 @Controller('tasks')
 export class TasksController {
@@ -119,8 +121,12 @@ export class TasksController {
     UserRole.PLANIFICADOR,
     UserRole.TECNICO,
   ) // Definimos roles permitidos
-  completeTask(@Param('id', ParseMongoIdPipe) id: string, @Req() req) {
-    return this.tasksService.completeTask(id, req.user);
+  completeTask(
+    @Param('id', ParseMongoIdPipe) id: string,
+    @Req() req,
+    @Body() completeTaskDto: CompleteTaskDto, // <-- Usar el nuevo DTO
+  ) {
+    return this.tasksService.completeTask(id, req.user, completeTaskDto);
   }
 
   @Post(':id/comments')
