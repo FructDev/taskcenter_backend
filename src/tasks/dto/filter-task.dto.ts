@@ -1,6 +1,6 @@
 // src/tasks/dto/filter-task.dto.ts
 
-import { IsEnum, IsOptional, IsString } from 'class-validator';
+import { IsDateString, IsEnum, IsOptional, IsString } from 'class-validator';
 import {
   TaskStatus,
   CriticalityLevel,
@@ -24,6 +24,14 @@ export class FilterTaskDto {
   @IsOptional()
   @IsEnum(TaskType)
   taskType?: TaskType;
+
+  @IsOptional()
+  @IsDateString()
+  startDate?: string; // <-- Añadir
+
+  @IsOptional()
+  @IsDateString()
+  endDate?: string; //
 
   // Podríamos añadir más filtros aquí en el futuro, como búsqueda por texto.
 }

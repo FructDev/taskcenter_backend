@@ -140,7 +140,9 @@ export class TasksService {
   // --- NUEVA IMPLEMENTACIÓN ---
   findAll(filterDto: FilterTaskDto) {
     // Desestructuramos también 'search' del DTO
-    const { status, criticality, taskType, search } = filterDto;
+    const { status, criticality, taskType, search, startDate, endDate } =
+      filterDto;
+    // const { status, search, startDate, endDate } = filterDto;
     const filters: FilterQuery<Task> = { isArchived: { $ne: true } };
 
     if (status) {
@@ -161,6 +163,13 @@ export class TasksService {
       // Usamos una expresión regular ($regex) para buscar texto que contenga
       // el término de búsqueda, sin importar mayúsculas o minúsculas ($options: 'i').
       filters.title = { $regex: search, $options: 'i' };
+    }
+
+    if (startDate && endDate) {
+      filters.dueDate = {
+        $gte: new Date(startDate),
+        $lte: new Date(endDate),
+      };
     }
 
     return this.taskModel

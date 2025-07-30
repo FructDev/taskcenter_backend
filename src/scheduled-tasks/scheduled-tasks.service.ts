@@ -120,6 +120,11 @@ export class ScheduledTasksService {
           null,
         ); // Pasamos null como currentUser porque es una acción del sistema
 
+        await this.scheduledTaskModel.updateOne(
+          { _id: rule._id },
+          { lastRunAt: new Date() },
+        );
+
         this.logger.log(`Tarea creada para el equipo: ${equipment.name}`);
       }
 
@@ -178,6 +183,11 @@ export class ScheduledTasksService {
     // Aquí reutilizamos la lógica del cron job, pero para una sola regla
     // Esta es una versión simplificada:
     await this.generateTasksForRule(rule);
+    await this.scheduledTaskModel.updateOne(
+      { _id: rule._id },
+      { lastRunAt: new Date() },
+    );
+
     return {
       message: `Ejecución de la regla "${rule.name}" forzada con éxito.`,
     };
