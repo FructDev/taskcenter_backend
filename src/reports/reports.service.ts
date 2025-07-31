@@ -2,7 +2,7 @@
 import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import mongoose, { Model } from 'mongoose';
-import { Task, TaskStatus } from 'src/tasks/entities/task.entity';
+import { Task, TaskStatus, TaskType } from 'src/tasks/entities/task.entity';
 import { FilterReportDto } from './dto/filter-report.dto';
 
 // interface KpiAggregationResult {
@@ -423,7 +423,7 @@ export class ReportsService {
   }
 
   private async _getTopFailingEquipment(matchStage: any) {
-    const filters = { ...matchStage, taskType: 'mantenimiento_correctivo' };
+    const filters = { ...matchStage, taskType: TaskType.CORRECTIVO };
     return this.taskModel.aggregate([
       {
         $match: filters,
