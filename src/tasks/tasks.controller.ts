@@ -31,6 +31,8 @@ import { StatusChangeDto } from './dto/status-change.dto';
 import { CreateDailyLogDto } from './dto/create-daily-log.dto';
 // import { FailureMode } from './entities/task.entity';
 import { CompleteTaskDto } from './dto/complete-task.dto';
+import { CreateFindingDto } from './dto/create-finding.dto';
+import { ConsolidateFindingsDto } from './dto/consolidate-findings.dto';
 
 @Controller('tasks')
 export class TasksController {
@@ -197,5 +199,28 @@ export class TasksController {
     @Body() createDailyLogDto: CreateDailyLogDto,
   ) {
     return this.tasksService.addDailyLog(id, req.user, createDailyLogDto);
+  }
+
+  @Post(':id/findings')
+  @UseGuards(JwtAuthGuard) // <-- AÑADIR ESTA LÍNEA
+  addFinding(
+    @Param('id', ParseMongoIdPipe) id: string,
+    @Body() createFindingDto: CreateFindingDto,
+    @Req() req,
+  ) {
+    return this.tasksService.addFinding(id, createFindingDto, req.user);
+  }
+
+  @Post(':id/consolidate-findings')
+  createConsolidatedTask(
+    @Param('id', ParseMongoIdPipe) id: string,
+    @Body() consolidateFindingsDto: ConsolidateFindingsDto,
+    @Req() req,
+  ) {
+    return this.tasksService.createConsolidatedTask(
+      id,
+      consolidateFindingsDto,
+      req.user,
+    );
   }
 }

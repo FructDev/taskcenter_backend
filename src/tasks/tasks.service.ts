@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-base-to-string */
 // src/tasks/tasks.service.ts
 
 import {
@@ -13,7 +14,12 @@ import { UpdateTaskDto } from './dto/update-task.dto';
 import { InjectModel } from '@nestjs/mongoose';
 import { FilterTaskDto } from './dto/filter-task.dto';
 import { FilterQuery, Model } from 'mongoose';
-import { Task, TaskStatus, TaskType } from './entities/task.entity';
+import {
+  CriticalityLevel,
+  Task,
+  TaskStatus,
+  TaskType,
+} from './entities/task.entity';
 import { CreateCommentDto } from './dto/create-comment.dto';
 import { CloudinaryService } from 'src/common/cloudinary/cloudinary.service';
 import { UsersService } from 'src/users/users.service';
@@ -27,6 +33,10 @@ import { StatusChangeDto } from './dto/status-change.dto';
 import { CreateDailyLogDto } from './dto/create-daily-log.dto';
 import { NotificationsService } from 'src/notifications/notifications.service';
 import { CompleteTaskDto } from './dto/complete-task.dto';
+import { Equipment } from 'src/equipment/entities/equipment.entity';
+import { ConsolidateFindingsDto } from './dto/consolidate-findings.dto';
+import { CreateFindingDto } from './dto/create-finding.dto';
+import { addDays } from 'date-fns';
 
 @Injectable()
 export class TasksService {
@@ -616,5 +626,89 @@ export class TasksService {
     });
 
     return task.save();
+  }
+
+  async addFinding(
+    taskId: string,
+    dto: CreateFindingDto,
+    currentUser: UserDocument,
+  ) {
+    const task = await this.findOne(taskId);
+
+    const newFinding = {
+      equipment: dto.equipmentId,
+      description: dto.description,
+      status: 'nuevo',
+    };
+
+    task.findings.push(newFinding as any);
+
+    await this.activityLogService.createLog({
+      user: currentUser,
+      action: ActionType.COMMENT_ADDED,
+      taskId: task._id.toString(),
+      details: `Registró un nuevo hallazgo: "${dto.description}"`,
+    });
+
+    return task.save();
+  }
+
+  async createConsolidatedTask(
+    taskId: string,
+    dto: ConsolidateFindingsDto,
+    currentUser: UserDocument,
+  ) {
+    const inspectionTask = await this.findOne(taskId);
+
+    if (!inspectionTask.findings || inspectionTask.findings.length === 0) {
+      throw new BadRequestException(
+        'La tarea de inspección no tiene hallazgos.',
+      );
+    }
+
+    const findingsToProcess = inspectionTask.findings.filter(
+      (f) => dto.findingIds.includes(f._id.toString()) && f.status === 'nuevo',
+    );
+
+    if (findingsToProcess.length === 0) {
+      throw new BadRequestException('No se seleccionaron hallazgos válidos.');
+    }
+
+    await inspectionTask.populate({
+      path: 'findings.equipment',
+      model: 'Equipment',
+    });
+
+    let newDescription =
+      'Reparar los siguientes hallazgos reportados en la inspección:\n';
+    for (const finding of findingsToProcess) {
+      const equipment = finding.equipment as unknown as Equipment;
+      newDescription += `- ${equipment.name} (${equipment.code}): ${finding.description}\n`;
+    }
+
+    const newTaskDto: CreateTaskDto = {
+      title: `Reparación de Hallazgos en ${inspectionTask.location.name}`,
+      description: newDescription,
+      taskType: TaskType.CORRECTIVO,
+      criticality: CriticalityLevel.MEDIA,
+      location: inspectionTask.location._id.toString(), // <-- Corrección
+      parentTask: inspectionTask._id.toString(), // <-- Corrección
+      dueDate: addDays(new Date(), 3).toISOString(), // <-- Corrección
+    };
+
+    const newTask = await this.create(newTaskDto, currentUser);
+
+    for (const findingId of dto.findingIds) {
+      // Usamos el ID del sub-documento, que es un objeto ObjectId
+      const findingInTask = inspectionTask.findings.find(
+        (f) => f._id.toString() === findingId,
+      );
+      if (findingInTask) {
+        findingInTask.status = 'procesado';
+      }
+    }
+    await inspectionTask.save();
+
+    return newTask;
   }
 }

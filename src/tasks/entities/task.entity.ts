@@ -1,5 +1,8 @@
 // src/tasks/entities/task.entity.ts
-import { Location } from 'src/locations/entities/location.entity';
+import {
+  Location,
+  LocationDocument,
+} from 'src/locations/entities/location.entity';
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import mongoose, { Document, HydratedDocument } from 'mongoose';
 import { Contractor } from 'src/contractors/entities/contractor.entity';
@@ -51,6 +54,24 @@ class FailureReport {
   correctiveAction: string;
 }
 export const FailureReportSchema = SchemaFactory.createForClass(FailureReport);
+
+@Schema({ _id: true, timestamps: true })
+class Finding {
+  _id: mongoose.Schema.Types.ObjectId;
+  @Prop({
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Equipment',
+    required: true,
+  })
+  equipment: Equipment;
+
+  @Prop({ required: true })
+  description: string;
+
+  @Prop({ default: 'nuevo' })
+  status: 'nuevo' | 'procesado';
+}
+export const FindingSchema = SchemaFactory.createForClass(Finding);
 
 @Schema({ _id: false, timestamps: true })
 class DailyLog {
@@ -166,7 +187,7 @@ export class Task {
     ref: 'Location',
     required: true,
   })
-  location: Location;
+  location: LocationDocument;
 
   @Prop({
     type: mongoose.Schema.Types.ObjectId,
@@ -189,6 +210,11 @@ export class Task {
 
   @Prop({ type: FailureReportSchema, required: false })
   failureReport?: FailureReport;
+
+  @Prop({ type: [FindingSchema], default: [] })
+  findings: Finding[];
+
+  parentTask?: Task;
 }
 
 // Exportamos el tipo de Documento de Mongoose por separado

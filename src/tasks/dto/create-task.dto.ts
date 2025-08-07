@@ -90,4 +90,8 @@ export class CreateTaskDto {
   @IsArray()
   @IsMongoId({ each: true })
   requiredPpe?: string[];
+
+  @IsOptional()
+  @IsMongoId()
+  parentTask?: string;
 }
