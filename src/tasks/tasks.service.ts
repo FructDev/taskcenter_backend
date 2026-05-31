@@ -138,9 +138,10 @@ export class TasksService {
       // Si la tarea tiene un 'assignedTo', ya sabemos que es un ID válido.
       // Simplemente lo convertimos a string.
       await this.notificationsService.sendNotificationToUser(
-        savedTask.assignedTo._id.toString(),
+        savedTask.assignedTo.toString(),
         'Nueva Tarea Asignada',
         `Se ha creado la tarea: "${savedTask.title}"`,
+        savedTask._id.toString(),
       );
     }
 
@@ -156,9 +157,12 @@ export class TasksService {
     const filters: FilterQuery<Task> = { isArchived: { $ne: true } };
 
     if (status) {
-      // Convierte el string 'pendiente,en progreso' en un array ['pendiente', 'en progreso']
-      const statusArray = status.split(',');
-      // Usa el operador $in de MongoDB para buscar documentos cuyo estado esté en el array
+      // Acepta tanto string único como array de strings
+      const statusArray = Array.isArray(status)
+        ? status
+        : status.includes(',')
+          ? status.split(',')
+          : [status];
       filters.status = { $in: statusArray };
     }
     if (criticality) {
@@ -283,6 +287,7 @@ export class TasksService {
           updatedTask.assignedTo._id.toString(),
           'Nueva Tarea Asignada',
           `Se te ha asignado la tarea: "${updatedTask.title}"`,
+          updatedTask._id.toString(),
         );
       }
     } else {
@@ -404,6 +409,42 @@ export class TasksService {
       taskId: savedTask._id.toString(),
       details: `Añadió un comentario.`,
     });
+
+    // --- MENTION NOTIFICATIONS ---
+    try {
+      const mentionRegex = /@([\w]+(?: [\w]+)*)/g;
+      const mentions: string[] = [];
+      let match: RegExpExecArray | null;
+      while ((match = mentionRegex.exec(createCommentDto.text)) !== null) {
+        mentions.push(match[1].trim());
+      }
+
+      if (mentions.length > 0) {
+        const allUsers = await this.usersService.findAll();
+        const authorId = currentUser._id.toString();
+
+        for (const mentionName of mentions) {
+          const matched = allUsers.filter(
+            (u) =>
+              u.name.toLowerCase().includes(mentionName.toLowerCase()) &&
+              u._id.toString() !== authorId,
+          );
+          for (const mentionedUser of matched) {
+            await this.notificationsService.sendNotificationToUser(
+              mentionedUser._id.toString(),
+              'Te mencionaron en una tarea',
+              `Alguien te mencionó en un comentario de la tarea "${task.title}"`,
+              savedTask._id.toString(),
+            );
+          }
+        }
+      }
+    } catch (mentionError) {
+      this.logger.warn(
+        `Error al procesar menciones en comentario: ${mentionError}`,
+      );
+    }
+
     // Guardamos la tarea principal, lo que también guardará el nuevo sub-documento.
     return savedTask.populate(this.relationsToPopulate);
   }
@@ -611,6 +652,7 @@ export class TasksService {
       confirmedBy: currentUser._id,
       notes: dto.notes || 'Asistencia y trabajo confirmados.',
       location: dto.locationId,
+      ...(dto.photoUrl && { photoUrl: dto.photoUrl }),
     };
 
     task.dailyLogs.push(newLog as any);
@@ -620,7 +662,7 @@ export class TasksService {
 
     await this.activityLogService.createLog({
       user: currentUser,
-      action: ActionType.COMMENT_ADDED, // Podríamos crear una acción nueva 'DAILY_LOG_ADDED'
+      action: ActionType.DAILY_LOG_ADDED,
       taskId: task._id.toString(),
       details: `Registró un parte diario para la tarea "${task.title}"`,
     });
@@ -645,7 +687,7 @@ export class TasksService {
 
     await this.activityLogService.createLog({
       user: currentUser,
-      action: ActionType.COMMENT_ADDED,
+      action: ActionType.FINDING_ADDED,
       taskId: task._id.toString(),
       details: `Registró un nuevo hallazgo: "${dto.description}"`,
     });

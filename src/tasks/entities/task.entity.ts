@@ -88,6 +88,9 @@ class DailyLog {
   })
   location: Location;
 
+  @Prop({ required: false, trim: true })
+  photoUrl?: string;
+
   createdAt: Date;
 }
 export const DailyLogSchema = SchemaFactory.createForClass(DailyLog);
@@ -102,6 +105,8 @@ class StatusChange {
   reason: string;
   @Prop({ type: mongoose.Schema.Types.ObjectId, required: true })
   userId: mongoose.Schema.Types.ObjectId;
+  @Prop({ required: true })
+  userName: string;
 }
 const StatusChangeSchema = SchemaFactory.createForClass(StatusChange);
 
@@ -214,6 +219,7 @@ export class Task {
   @Prop({ type: [FindingSchema], default: [] })
   findings: Finding[];
 
+  @Prop({ type: mongoose.Schema.Types.ObjectId, ref: 'Task', required: false })
   parentTask?: Task;
 }
 

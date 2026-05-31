@@ -39,13 +39,10 @@ export class AuthController {
     return this.authService.login(req.user);
   }
 
-  @UseGuards(JwtAuthGuard) // Protegemos la ruta, solo para usuarios con token válido
+  @UseGuards(JwtAuthGuard)
   @Get('profile')
-  getProfile(@Request() req) {
-    // El guard JwtAuthGuard ya ha validado el token y ha adjuntado
-    // el objeto de usuario a la petición (en req.user).
-    // Simplemente lo devolvemos. Nuestro método toJSON se encarga de la seguridad.
-    return req.user;
+  getProfile(@Request() req: { user: any }) {
+    return req.user as Record<string, unknown>;
   }
 
   @UseGuards(JwtAuthGuard)

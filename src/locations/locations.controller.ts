@@ -14,6 +14,7 @@ import {
 import { LocationsService } from './locations.service';
 import { CreateLocationDto } from './dto/create-location.dto';
 import { UpdateLocationDto } from './dto/update-location.dto';
+import { BulkCreateLocationDto } from './dto/bulk-create-location.dto';
 import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
 import { RolesGuard } from 'src/auth/guards/roles/roles.guard';
 import { Roles } from 'src/auth/decorators/roles.decorator';
@@ -30,6 +31,13 @@ export class LocationsController {
   @HttpCode(HttpStatus.CREATED)
   create(@Body() createLocationDto: CreateLocationDto) {
     return this.locationsService.create(createLocationDto);
+  }
+
+  @Post('bulk')
+  @Roles(UserRole.ADMIN, UserRole.SUPERVISOR, UserRole.PLANIFICADOR)
+  @HttpCode(HttpStatus.CREATED)
+  bulkCreate(@Body() dto: BulkCreateLocationDto) {
+    return this.locationsService.bulkCreate(dto);
   }
 
   @Get()

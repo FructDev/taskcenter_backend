@@ -10,6 +10,7 @@ import { Model } from 'mongoose';
 import { CreateLocationDto } from './dto/create-location.dto';
 import { UpdateLocationDto } from './dto/update-location.dto';
 import { Location, LocationDocument } from './entities/location.entity';
+import { BulkCreateLocationDto } from './dto/bulk-create-location.dto';
 
 @Injectable()
 export class LocationsService {
@@ -81,5 +82,37 @@ export class LocationsService {
       throw new NotFoundException(`Ubicación con ID "${id}" no encontrada`);
     }
     return;
+  }
+
+  async bulkCreate(dto: BulkCreateLocationDto) {
+    if (dto.parentLocationId) {
+      await this.findOne(dto.parentLocationId);
+    }
+
+    const locationsToCreate: CreateLocationDto[] = [];
+    for (let i = 0; i < dto.quantity; i++) {
+      const n = (dto.startNumber + i).toString().padStart(2, '0');
+      locationsToCreate.push({
+        name: `${dto.namePrefix} ${n}`,
+        code: `${dto.codePrefix}${n}`,
+        type: dto.type,
+        ...(dto.parentLocationId && { parentLocation: dto.parentLocationId }),
+      });
+    }
+
+    try {
+      const created = await this.locationModel.insertMany(locationsToCreate);
+      return {
+        message: `${created.length} ubicaciones creadas exitosamente.`,
+        count: created.length,
+      };
+    } catch (error) {
+      if (error.code === 11000) {
+        throw new ConflictException(
+          'Uno o más códigos generados ya existen. Ajusta el prefijo o número inicial.',
+        );
+      }
+      throw new InternalServerErrorException('Error al crear las ubicaciones.');
+    }
   }
 }

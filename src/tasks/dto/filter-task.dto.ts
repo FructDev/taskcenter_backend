@@ -1,6 +1,13 @@
 // src/tasks/dto/filter-task.dto.ts
 
-import { IsDateString, IsEnum, IsOptional, IsString } from 'class-validator';
+import {
+  IsDateString,
+  IsEnum,
+  IsOptional,
+  IsString,
+  IsArray,
+} from 'class-validator';
+import { Transform } from 'class-transformer';
 import {
   TaskStatus,
   CriticalityLevel,
@@ -8,14 +15,19 @@ import {
 } from '../entities/task.entity';
 
 export class FilterTaskDto {
-  // Todos los campos son opcionales, ya que el usuario puede no querer filtrar por ellos.
   @IsOptional()
   @IsString()
   search?: string;
 
+  // Acepta un solo valor ("pendiente") o múltiples (?status=pendiente&status=en+progreso)
   @IsOptional()
-  @IsEnum(TaskStatus)
-  status?: TaskStatus;
+  @Transform(
+    ({ value }: { value: unknown }): TaskStatus[] =>
+      (Array.isArray(value) ? value : [value]) as TaskStatus[],
+  )
+  @IsArray()
+  @IsEnum(TaskStatus, { each: true })
+  status?: TaskStatus | TaskStatus[];
 
   @IsOptional()
   @IsEnum(CriticalityLevel)
@@ -27,11 +39,9 @@ export class FilterTaskDto {
 
   @IsOptional()
   @IsDateString()
-  startDate?: string; // <-- Añadir
+  startDate?: string;
 
   @IsOptional()
   @IsDateString()
-  endDate?: string; //
-
-  // Podríamos añadir más filtros aquí en el futuro, como búsqueda por texto.
+  endDate?: string;
 }

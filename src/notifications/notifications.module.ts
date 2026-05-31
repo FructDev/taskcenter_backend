@@ -1,12 +1,22 @@
 import { Module } from '@nestjs/common';
+import { MongooseModule } from '@nestjs/mongoose';
 import { NotificationsService } from './notifications.service';
 import { NotificationsController } from './notifications.controller';
 import { UsersModule } from 'src/users/users.module';
+import {
+  Notification,
+  NotificationSchema,
+} from './entities/notification.entity';
 
 @Module({
-  imports: [UsersModule], // Importamos UsersModule para poder usar UsersService
+  imports: [
+    UsersModule,
+    MongooseModule.forFeature([
+      { name: Notification.name, schema: NotificationSchema },
+    ]),
+  ],
   providers: [NotificationsService],
   controllers: [NotificationsController],
-  exports: [NotificationsService], // Exportamos para que TasksService pueda usarlo
+  exports: [NotificationsService],
 })
 export class NotificationsModule {}
