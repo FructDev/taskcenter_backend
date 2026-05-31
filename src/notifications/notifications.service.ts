@@ -8,7 +8,7 @@ import {
   NotificationDocument,
 } from './entities/notification.entity';
 
-import { readFileSync } from 'fs';
+import { readFileSync, existsSync } from 'fs';
 import { resolve } from 'path';
 
 @Injectable()
@@ -22,25 +22,50 @@ export class NotificationsService {
   ) {
     if (admin.apps.length === 0) {
       try {
-        const serviceAccountPath = resolve(
-          process.cwd(),
-          'firebase-service-account.json',
-        );
+        // Opción 1: variables de entorno (producción — Render, Railway, etc.)
+        const projectId = process.env.FIREBASE_PROJECT_ID;
+        const clientEmail = process.env.FIREBASE_CLIENT_EMAIL;
+        const privateKey = process.env.FIREBASE_PRIVATE_KEY;
 
-        const serviceAccount = JSON.parse(
-          readFileSync(serviceAccountPath, 'utf8'),
-        );
+        if (projectId && clientEmail && privateKey) {
+          admin.initializeApp({
+            credential: admin.credential.cert({
+              projectId,
+              clientEmail,
+              // Las env vars reemplazan \n literal por salto de línea real
+              privateKey: privateKey.replace(/\\n/g, '\n'),
+            }),
+          });
+          this.logger.log(
+            'Firebase Admin SDK inicializado desde variables de entorno.',
+          );
+        } else {
+          // Opción 2: archivo JSON local (desarrollo)
+          const serviceAccountPath = resolve(
+            process.cwd(),
+            'firebase-service-account.json',
+          );
 
-        admin.initializeApp({
-          credential: admin.credential.cert(serviceAccount),
-        });
-
-        this.logger.log('Firebase Admin SDK inicializado correctamente.');
+          if (existsSync(serviceAccountPath)) {
+            const serviceAccount = JSON.parse(
+              readFileSync(serviceAccountPath, 'utf8'),
+            );
+            admin.initializeApp({
+              credential: admin.credential.cert(serviceAccount),
+            });
+            this.logger.log(
+              'Firebase Admin SDK inicializado desde archivo JSON.',
+            );
+          } else {
+            this.logger.warn(
+              'Firebase Admin SDK NO inicializado. ' +
+                'Define FIREBASE_PROJECT_ID, FIREBASE_CLIENT_EMAIL y FIREBASE_PRIVATE_KEY ' +
+                'como variables de entorno, o coloca firebase-service-account.json en la raíz.',
+            );
+          }
+        }
       } catch (error) {
         this.logger.error('Error al inicializar Firebase Admin SDK:', error);
-        this.logger.error(
-          'Asegúrate de que el archivo "firebase-service-account.json" exista en la raíz del proyecto "api".',
-        );
       }
     }
   }
