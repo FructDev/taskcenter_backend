@@ -14,11 +14,25 @@ import { LocationType } from '../entities/location.entity';
 class CoordinatesDto {
   @IsNumber()
   @IsNotEmpty()
-  lat: number; // Debe ser lat
+  lat: number;
 
   @IsNumber()
   @IsNotEmpty()
-  lng: number; // Debe ser lng
+  lng: number;
+}
+
+class BoundsDto {
+  @IsNumber()
+  x1: number;
+
+  @IsNumber()
+  y1: number;
+
+  @IsNumber()
+  x2: number;
+
+  @IsNumber()
+  y2: number;
 }
 
 export class CreateLocationDto {
@@ -45,4 +59,9 @@ export class CreateLocationDto {
   @ValidateNested()
   @Type(() => CoordinatesDto)
   coordinates?: CoordinatesDto;
+
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => BoundsDto)
+  bounds?: BoundsDto;
 }

@@ -29,6 +29,22 @@ export class Coordinates {
 }
 export const CoordinatesSchema = SchemaFactory.createForClass(Coordinates);
 
+@Schema({ _id: false })
+export class Bounds {
+  @Prop({ type: Number, required: true })
+  x1: number;
+
+  @Prop({ type: Number, required: true })
+  y1: number;
+
+  @Prop({ type: Number, required: true })
+  x2: number;
+
+  @Prop({ type: Number, required: true })
+  y2: number;
+}
+export const BoundsSchema = SchemaFactory.createForClass(Bounds);
+
 @Schema({ timestamps: true })
 export class Location {
   @Prop({ required: true, trim: true })
@@ -52,6 +68,9 @@ export class Location {
 
   @Prop({ type: CoordinatesSchema, required: false })
   coordinates?: Coordinates;
+
+  @Prop({ type: BoundsSchema, required: false })
+  bounds?: Bounds;
 }
 
 export type LocationDocument = HydratedDocument<Location>;
